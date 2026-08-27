@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Philosophers — Study Guide (Our Build)</title>
+<style>
+  :root {
+    --bg: #0e0e12; --bg2: #16161d; --bg3: #1e1e28;
+    --text: #e2e0d8; --text2: #9e9c94; --text3: #6b695f;
+    --border: #2a2a36; --accent: #7c6df0; --accent2: #f06d7c;
+    --accent3: #4ecdc4; --accent4: #f0a846; --accent5: #6db3f0;
+    --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.72; font-size: 15px; }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(14,14,18,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.7rem 1.5rem; display: flex; align-items: center; gap: 1.2rem;
+    overflow-x: auto; white-space: nowrap;
+  }
+  nav .logo { font-weight: 700; color: var(--accent); font-size: 14px; letter-spacing: 0.5px; }
+  nav a { color: var(--text3); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+  nav a:hover { color: var(--accent); }
+  #nav-progress {
+    margin-left: auto; font-family: var(--mono); font-size: 12px;
+    color: var(--accent3); border: 1px solid var(--border);
+    padding: 2px 10px; border-radius: 20px; background: var(--bg2);
+  }
+
+  .container { max-width: 820px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+
+  /* HERO */
+  .hero {
+    text-align: center; padding: 3rem 0 2.5rem;
+    border-bottom: 1px solid var(--border); margin-bottom: 2.5rem;
+  }
+  .hero-tag { font-size: 12px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.8rem; }
+  .hero h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.6rem; }
+  .hero p { color: var(--text2); max-width: 580px; margin: 0 auto 1.2rem; }
+  .hero-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .chip {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
+  }
+  .chip.purple { border-color: var(--accent); color: var(--accent); }
+  .chip.red { border-color: var(--accent2); color: var(--accent2); }
+  .chip.teal { border-color: var(--accent3); color: var(--accent3); }
+  .chip.orange { border-color: var(--accent4); color: var(--accent4); }
+  .chip.blue { border-color: var(--accent5); color: var(--accent5); }
+
+  h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
+  h3 { font-size: 1.1rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.6rem; color: var(--accent3); }
+  section { margin-bottom: 2.5rem; }
+  .section-tag { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .tag-purple { color: var(--accent); }  .tag-blue { color: var(--accent5); }
+  .tag-orange { color: var(--accent4); } .tag-teal { color: var(--accent3); }
+  .tag-red { color: var(--accent2); }
+  p { margin-bottom: 0.9rem; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+  a { color: var(--accent5); }
+
+  /* TERM TOOLTIPS — hover any highlighted word to re-check its meaning */
+  .term {
+    color: var(--accent3); border-bottom: 1px dotted var(--accent3);
+    cursor: help; position: relative;
+  }
+  .term::after {
+    content: attr(data-def);
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: calc(100% + 7px);
+    background: var(--bg3); color: var(--text); border: 1px solid var(--accent3);
+    padding: 0.55rem 0.75rem; border-radius: 8px;
+    width: 260px; max-width: 74vw;
+    font-family: var(--sans); font-size: 12.5px; font-weight: 400;
+    line-height: 1.55; text-align: left; text-transform: none; letter-spacing: 0;
+    white-space: normal; box-shadow: 0 8px 24px rgba(0,0,0,0.55); z-index: 60;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s;
+  }
+  .term:hover::after, .term:focus::after, .term:active::after { opacity: 1; }
+
+  /* GLOSSARY */
+  .gloss { display: grid; grid-template-columns: max-content 1fr; column-gap: 16px; font-size: 13.5px; margin-top: 0.4rem; }
+  .gloss dt {
+    font-family: var(--mono); font-weight: 700; color: var(--accent3);
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+  }
+  .gloss dd {
+    color: var(--text2); padding: 7px 0; border-bottom: 1px solid var(--border);
+  }
+  .gloss .ana { color: var(--accent4); font-style: normal; }
+
+  /* IDEA BOXES — one idea per box */
+  .idea-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 1.2rem 0; }
+  .idea {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.1rem; font-size: 14px;
+  }
+  .idea.full { grid-column: 1 / -1; }
+  .idea-label { font-size: 12px; font-weight: 700; margin-bottom: 0.4rem; }
+  .idea.purple { border-left: 3px solid var(--accent); }   .idea.purple .idea-label { color: var(--accent); }
+  .idea.red { border-left: 3px solid var(--accent2); }     .idea.red .idea-label { color: var(--accent2); }
+  .idea.teal { border-left: 3px solid var(--accent3); }    .idea.teal .idea-label { color: var(--accent3); }
+  .idea.orange { border-left: 3px solid var(--accent4); }  .idea.orange .idea-label { color: var(--accent4); }
+  .idea.blue { border-left: 3px solid var(--accent5); }    .idea.blue .idea-label { color: var(--accent5); }
+  .idea p { margin: 0; color: var(--text2); }
+  .idea p strong, .idea p code { color: var(--text); }
+
+  /* CALLOUTS */
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--bg2);
+    padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0;
+    font-size: 14px;
+  }
+  .callout.tip { border-color: var(--accent3); }
+  .callout.warn { border-color: var(--accent4); }
+  .callout.danger { border-color: var(--accent2); }
+  .callout strong { display: block; margin-bottom: 0.3rem; }
+
+  /* CODE */
+  pre {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.2rem; overflow-x: auto;
+    font-family: var(--mono); font-size: 13px; line-height: 1.6;
+    margin: 0.8rem 0 1rem; color: var(--text);
+  }
+  code { font-family: var(--mono); font-size: 13px; }
+  p code, li code, .idea code, dd code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12.5px; }
+  .code-label { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-bottom: -0.5rem; margin-top: 1rem; }
+  .cm { color: #6b695f; } .kw { color: #c792ea; } .fn { color: #82aaff; }
+  .type { color: #ffcb6b; } .str { color: #c3e88d; } .num { color: #f78c6c; }
+
+  /* FLOWCHART */
+  .flow { display: flex; flex-direction: column; align-items: center; margin: 1.5rem 0; }
+  .fbox {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.8rem 1.2rem; text-align: center; width: 100%; max-width: 460px;
+  }
+  .fbox .fname { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .fbox .fdesc { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .fbox.start { border-color: var(--accent); }
+  .fbox.end { border-color: var(--accent2); }
+  .farrow { color: var(--accent); font-size: 18px; line-height: 1; padding: 6px 0; }
+  .farrow small { display: block; color: var(--text3); font-size: 11px; font-family: var(--mono); }
+  .fsplit {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    width: 100%; max-width: 640px; margin: 0.2rem 0;
+  }
+  .flane {
+    border: 1px dashed var(--border); border-radius: 12px; padding: 0.9rem;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .flane-title { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.6rem; font-weight: 700; }
+  .flane.philo .flane-title { color: var(--accent3); }
+  .flane.monitor .flane-title { color: var(--accent4); }
+  .flane .fbox { padding: 0.55rem 0.8rem; max-width: none; }
+  .flane .fbox .fname { font-size: 11.5px; }
+  .flane .fbox .fdesc { font-size: 12px; }
+  .flane .farrow { padding: 3px 0; font-size: 15px; }
+  .floop { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  /* STEP CARDS */
+  .progress-wrap { background: var(--bg3); border-radius: 20px; height: 10px; margin: 1rem 0 1.5rem; overflow: hidden; border: 1px solid var(--border); }
+  #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent3)); transition: width 0.3s; }
+  .step-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.1rem 1.2rem; margin-bottom: 0.9rem; display: flex; gap: 1rem; align-items: flex-start;
+  }
+  .step-card.done { border-color: var(--accent3); }
+  .step-num {
+    font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--accent);
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    min-width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+  }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 700; font-size: 15px; }
+  .step-title code { color: var(--accent3); background: none; padding: 0; }
+  .step-why { font-size: 13px; color: var(--text2); margin-top: 0.3rem; }
+  .step-why strong { color: var(--accent4); }
+  .step-check { margin-top: 0.5rem; }
+  .step-check input { width: 17px; height: 17px; accent-color: var(--accent3); cursor: pointer; }
+  .step-check label { font-size: 12.5px; color: var(--text3); cursor: pointer; margin-left: 6px; vertical-align: 2px; }
+
+  /* DETAILS */
+  details {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 0.9rem; overflow: hidden;
+  }
+  details summary {
+    cursor: pointer; padding: 0.9rem 1.1rem; font-weight: 600; font-size: 14px;
+    list-style: none; display: flex; align-items: center; gap: 0.6rem;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: "▸"; color: var(--accent); transition: transform 0.2s; }
+  details[open] summary::before { transform: rotate(90deg); }
+  details summary .file { font-family: var(--mono); font-size: 12px; color: var(--accent3); }
+  details .d-body { padding: 0 1.1rem 1rem; border-top: 1px solid var(--border); }
+  details .d-body p { font-size: 13.5px; color: var(--text2); margin-top: 0.8rem; }
+
+  /* REFERENCES */
+  .ref-list { list-style: none; }
+  .ref-list li {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.7rem 1rem; margin-bottom: 0.5rem; font-size: 13.5px;
+  }
+  .ref-list .ref-kind { font-family: var(--mono); font-size: 11px; color: var(--accent4); display: block; }
+  .ref-list .ref-note { color: var(--text2); font-size: 12.5px; }
+
+  @media (max-width: 600px) {
+    .idea-grid { grid-template-columns: 1fr; }
+    .fsplit { grid-template-columns: 1fr; }
+    .gloss { grid-template-columns: 1fr; }
+    .gloss dt { border-bottom: none; padding-bottom: 0; }
+    .hero h1 { font-size: 1.8rem; }
+    nav { padding: 0.6rem 1rem; }
+    #nav-progress { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">philo·study</span>
+  <a href="#glossary">Glossary</a>
+  <a href="#logic">Logic</a>
+  <a href="#flow">Flowchart</a>
+  <a href="#order">Build Order</a>
+  <a href="#framework">Framework</a>
+  <a href="#refs">References</a>
+  <span id="nav-progress">0 / 8 steps</span>
+</nav>
+
+<div class="container">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">42 Bangkok · Rank 3 · How WE Built It</div>
+  <h1>Philosophers</h1>
+  <p>A study guide reverse-engineered from our own working solution: the exact files, function names, build order, and the <span class="term" data-def="Starvation: one thread keeps losing the fight for a resource and never gets a turn — like always being cut in line at a buffet.">starvation</span> bug we found (and fixed) while <span class="term" data-def="Stress test: run the same config many times, for a long time, to force out rare timing bugs a single run hides.">stress-testing</span>.</p>
+  <p style="font-size:13px;">New to threads? That's assumed. Every technical word is explained on first use, collected in the <a href="#glossary">glossary</a> below, and any <span class="term" data-def="Like this! Hover (or tap) a highlighted word anywhere in the guide to re-check its meaning without scrolling back.">highlighted term</span> shows its definition again when you hover it.</p>
+  <div class="hero-meta">
+    <span class="chip purple">5 files + Makefile</span>
+    <span class="chip teal">1 <span class="term" data-def="Thread: a second worker inside your program — all threads share the same memory, unlike processes.">thread</span> / philosopher</span>
+    <span class="chip red">1 <span class="term" data-def="Mutex: a lock only one thread can hold at a time — like a bathroom key: whoever holds it goes, everyone else waits.">mutex</span> / fork</span>
+    <span class="chip orange"><span class="term" data-def="Monitor: a watcher loop that scans everyone's state and enforces the global rules — like a lifeguard scanning the pool.">monitor</span> in main thread</span>
+    <span class="chip blue">smart_think fairness</span>
+  </div>
+</div>
+
+<!-- ===== GLOSSARY ===== -->
+<section id="glossary">
+  <div class="section-tag tag-teal">Glossary — plain words first</div>
+  <h2>Every new word, defined once</h2>
+  <p>You already know C basics from Rank 0–1: functions, pointers, structs, processes. This project adds exactly one big new idea — <strong>threads</strong> — and a family of words that come with it. Here they all are, A→Z, each with a one-line meaning and an everyday <span class="ana" style="color:var(--accent4);">analogy</span>. Skim it now, come back whenever.</p>
+
+  <details>
+    <summary>📖 Open the glossary (23 terms, A → Z)</summary>
+    <div class="d-body">
+      <dl class="gloss">
+        <dt>blocked</dt>
+        <dd>A thread that is paused on a locked mutex, doing nothing until the lock opens. <span class="ana">Analogy: standing outside a locked bathroom — you can't do anything else, you just wait for the key.</span></dd>
+
+        <dt>circular wait</dt>
+        <dd>A waits for B, B waits for C, C waits for A — nobody can ever move. The pattern behind every deadlock at this table. <span class="ana">Analogy: four polite people at an intersection, each waving the next one through, forever.</span></dd>
+
+        <dt>concurrency</dt>
+        <dd>Several tasks making progress during the same time span, sharing the same resources. <span class="ana">Analogy: five cooks in one kitchen sharing a single stove and fridge.</span></dd>
+
+        <dt>data race</dt>
+        <dd>Two threads touch the same memory at the same moment and at least one writes. C promises nothing about the result. <span class="ana">Analogy: two people writing the same word on one whiteboard at once — you get scribble.</span></dd>
+
+        <dt>deadlock</dt>
+        <dd>Two or more threads each hold something the other needs, so all of them wait forever. No crash, no error — the program just freezes. <span class="ana">Analogy: two diners, two chopsticks, each holding one chopstick and refusing to let go.</span></dd>
+
+        <dt>fork</dt>
+        <dd>In this project: a shared utensil between two neighbouring philosophers, modelled in code as one mutex. <strong>Not</strong> the <code>fork()</code> system call that clones a process — same word, totally unrelated.</dd>
+
+        <dt>join</dt>
+        <dd><code>pthread_join</code>: wait for a thread to finish before moving on, and clean up after it. <span class="ana">Analogy: a parent waiting at the door until the kid is actually home — only then locking up.</span></dd>
+
+        <dt>lock / unlock</dt>
+        <dd>Taking a mutex / releasing it. Lock blocks you until the mutex is free, then it's yours. <span class="ana">Analogy: taking the bathroom key off the hook / hanging it back for the next person.</span></dd>
+
+        <dt>main thread</dt>
+        <dd>The one thread every program starts with — it's what runs <code>main()</code>. In our build, after spawning the philosophers, the main thread becomes the monitor instead of sitting idle.</dd>
+
+        <dt>monitor</dt>
+        <dd>A watcher loop that repeatedly scans everyone's state and enforces the global rules (death, meal quota) that no single worker can see alone. <span class="ana">Analogy: a lifeguard scanning the whole pool every few seconds.</span></dd>
+
+        <dt>mutex</dt>
+        <dd>“MUTual EXclusion” lock — only one thread can hold it at a time; everyone else waits at <code>lock()</code>. <span class="ana">Analogy: a bathroom key — whoever holds it goes, everyone else waits.</span></dd>
+
+        <dt>mutual exclusion</dt>
+        <dd>The rule a mutex enforces: only one thread may use a shared resource at a time. <span class="ana">Analogy: one key, one bathroom, one person.</span></dd>
+
+        <dt>polling</dt>
+        <dd>Checking a condition over and over in a loop instead of being notified. Our monitor polls every philosopher twice per millisecond. <span class="ana">Analogy: refreshing a package-tracking page every few seconds.</span></dd>
+
+        <dt>race condition</dt>
+        <dd>A timing bug: the outcome changes depending on which thread happens to run first. It may “work” a hundred times, then fail once. <span class="ana">Analogy: two roommates both buying milk because each checked the fridge before the other got back.</span></dd>
+
+        <dt>routine</dt>
+        <dd>The function a thread runs, top to bottom; when it returns, the thread ends. Ours is literally named <code>routine()</code>. <span class="ana">Analogy: the worker's to-do list — finish the list, go home.</span></dd>
+
+        <dt>spawn</dt>
+        <dd>To create and start a new thread (<code>pthread_create</code>). <span class="ana">Analogy: hiring another worker into the same office, effective immediately.</span></dd>
+
+        <dt>stagger</dt>
+        <dd>Deliberately offsetting start times so everyone doesn't lunge for the forks at the same instant. <span class="ana">Analogy: boarding a plane by rows instead of all at once.</span></dd>
+
+        <dt>starvation</dt>
+        <dd>No crash, no deadlock — but one thread keeps losing the fight for a resource and never gets a turn, until it's too late. <span class="ana">Analogy: always being cut in front of at a buffet: the line moves, you never eat.</span></dd>
+
+        <dt>stress test</dt>
+        <dd>Running the same configuration many times (or for a long time) to force out rare timing bugs that a single run hides. This is how we found our starvation bug.</dd>
+
+        <dt>thread</dt>
+        <dd>A second worker inside your program. A process is a separate office with private memory; a thread is another worker in the <strong>same</strong> office — same memory, same variables, truly running at the same time. <span class="ana">Analogy: coworkers sharing one desk and one whiteboard.</span></dd>
+
+        <dt>thread-safe</dt>
+        <dd>Code many threads can run at the same time without corrupting anything — usually because a mutex guards every shared read and write.</dd>
+
+        <dt>ThreadSanitizer</dt>
+        <dd>A compiler tool (<code>-fsanitize=thread</code>, “tsan”) that watches every memory access while the program runs and reports data races. <span class="ana">Analogy: a referee with instant replay — nothing sneaky gets past it.</span></dd>
+
+        <dt>undefined behaviour</dt>
+        <dd>C's way of saying “no promises”: the program may work, crash, or silently corrupt data — and “it seems to work” proves nothing. Data races cause it.</dd>
+      </dl>
+    </div>
+  </details>
+</section>
+
+<hr>
+
+<!-- ===== 1. PHILOSOPHY & LOGIC ===== -->
+<section id="logic">
+  <div class="section-tag tag-purple">Part 1 — Philosophy &amp; Logic</div>
+  <h2>The problem, and how our solution thinks</h2>
+
+  <p><strong>The setup:</strong> N philosophers sit at a round table. Between each pair of neighbours lies exactly one <span class="term" data-def="Fork: a shared utensil between two neighbours — in code, one mutex per fork. Not the fork() process call.">fork</span> (just a table utensil — no relation to the <code>fork()</code> call you know from processes). To eat, a philosopher needs <em>both</em> the fork on their left and the fork on their right. After eating they sleep, then think, then get hungry again. If a philosopher goes too long without starting a meal, they die — and the simulation ends.</p>
+
+  <p>Dijkstra invented this puzzle in 1965. It looks silly on purpose: the spaghetti hides four serious problems that appear in <em>every</em> <span class="term" data-def="Concurrency: several tasks making progress during the same time span, sharing the same resources — like cooks sharing one kitchen.">concurrent</span> program — a program where several things happen at the same time.</p>
+
+  <h3>Two words before anything else</h3>
+
+  <div class="idea-grid">
+    <div class="idea purple full">
+      <div class="idea-label">🧵 THREAD — the one truly new thing in this project</div>
+      <p>A <span class="term" data-def="Thread: a second worker inside your program — all threads share the same memory, unlike processes.">thread</span> is a <strong>second worker inside your program</strong>. You already know processes: a process is a separate office with its own private memory. A thread is another worker in the <strong>same office</strong> — same memory, same variables, and it truly runs at the same time as the others. Each philosopher will be one thread, all running the same function. The catch: everyone shares one whiteboard, and that sharing causes all four dangers below.</p>
+    </div>
+    <div class="idea teal full">
+      <div class="idea-label">🔑 MUTEX — the tool that tames threads</div>
+      <p>A <span class="term" data-def="Mutex: a lock only one thread can hold at a time — like a bathroom key: whoever holds it goes, everyone else waits.">mutex</span> (“MUTual EXclusion”) is a <strong>lock only one thread can hold at a time</strong> — like a bathroom key: whoever holds it goes; everyone else waits at the door. <code>lock()</code> takes the key (and makes you wait — <span class="term" data-def="Blocked: paused on a locked mutex, doing nothing until it opens — like waiting outside a locked bathroom.">blocked</span> — if someone else has it); <code>unlock()</code> hangs it back. In this project, every fork on the table is one mutex.</p>
+    </div>
+  </div>
+
+  <h3>The four dangers</h3>
+
+  <div class="idea-grid">
+    <div class="idea red">
+      <div class="idea-label">⚡ RACE CONDITION</div>
+      <p>Two threads touch the same memory at the same time and at least one writes. The result is garbage, and it changes run to run depending on who got there first — that unsynchronized access is called a <span class="term" data-def="Data race: two threads touch the same memory at once and at least one writes — C promises nothing about the result.">data race</span>. In our code: the <span class="term" data-def="Monitor: a watcher loop that scans everyone's state and enforces the global rules — like a lifeguard. Ours runs in the main thread.">monitor</span> (our watcher loop — meet it below) <strong>reads</strong> <code>last_meal</code> while the philosopher <strong>writes</strong> it — so both accesses go through <code>meal_lock</code>, a mutex that guards meal data.</p>
+    </div>
+    <div class="idea orange">
+      <div class="idea-label">🔒 DEADLOCK</div>
+      <p><span class="term" data-def="Deadlock: threads each hold something the other needs, so everyone waits forever. The program freezes with no error.">Deadlock</span>: everyone grabs their left fork, then waits forever for a right fork that will never come. Nobody can move — no crash, no message, the program just freezes. That circle of waiting is called <span class="term" data-def="Circular wait: A waits for B, B waits for C, C waits for A — nobody ever moves. The pattern our fork-ordering trick breaks.">circular wait</span> — the thing our fork-ordering trick breaks.</p>
+    </div>
+    <div class="idea blue">
+      <div class="idea-label">🥄 STARVATION</div>
+      <p><span class="term" data-def="Starvation: one thread keeps losing the fight for a resource and never gets a turn — like always being cut in line at a buffet.">Starvation</span>: no crash, no deadlock — but one unlucky philosopher keeps losing the race for forks, like someone who keeps getting cut in front of at a buffet, and dies slowly. This actually happened to us in testing (see Step 8). It's the sneakiest failure mode.</p>
+    </div>
+    <div class="idea teal">
+      <div class="idea-label">🚪 MUTUAL EXCLUSION</div>
+      <p><span class="term" data-def="Mutual exclusion: only one thread may use a shared resource at a time — one key, one bathroom, one person.">Mutual exclusion</span>: only one thread may hold a resource at a time. A fork is a <code>pthread_mutex_t</code>: lock it to pick it up, unlock it to put it down. Whoever arrives second simply waits.</p>
+    </div>
+  </div>
+
+  <h3>The logic our solution uses</h3>
+
+  <div class="idea-grid">
+    <div class="idea purple full">
+      <div class="idea-label">🧵 ONE THREAD PER PHILOSOPHER — MONITOR IN MAIN</div>
+      <p>We <span class="term" data-def="Spawn: create and start a new thread (pthread_create) — like hiring another worker into the same office.">spawn</span> (create and start) N threads, each running <code>routine()</code> — the <span class="term" data-def="Routine: the function a thread runs top to bottom; when it returns, the thread ends.">routine</span> is simply the function a thread runs, its to-do list. We do <strong>not</strong> spawn an extra monitor thread — after creating the philosophers, the <span class="term" data-def="Main thread: the original thread that runs main(). In our build it becomes the monitor instead of sitting idle.">main thread</span> itself (the one that runs <code>main()</code>) becomes the monitor by calling <code>monitor(data)</code>. One fewer thread to manage, same power.</p>
+    </div>
+    <div class="idea red">
+      <div class="idea-label">🍴 ONE MUTEX PER FORK</div>
+      <p>An array <code>data-&gt;forks</code> of N <span class="term" data-def="Mutex: a lock only one thread can hold at a time — like a bathroom key.">mutexes</span>. Philosopher <code>i</code> owns <code>left_fork = &amp;forks[i]</code> and <code>right_fork = &amp;forks[(i + 1) % nb]</code> — the wrap-around closes the circle.</p>
+    </div>
+    <div class="idea orange">
+      <div class="idea-label">🔄 DEADLOCK AVOIDANCE: FORK ORDER BY PARITY</div>
+      <p>In <code>take_forks()</code>: odd IDs lock <strong>left first</strong>, even IDs lock <strong>right first</strong>. Two neighbours can never each hold one fork while waiting on the other — the <span class="term" data-def="Circular wait: A waits for B, B waits for C, C waits for A — nobody ever moves.">circular wait</span> is broken.</p>
+    </div>
+    <div class="idea teal">
+      <div class="idea-label">🛡 THREE SHARED LOCKS</div>
+      <p><code>print_lock</code> keeps output lines whole. <code>meal_lock</code> guards <code>last_meal</code> + <code>meals_eaten</code>. <code>stop_lock</code> guards the <code>stopped</code> flag. Every shared read/write goes through its lock — that's what makes the code <span class="term" data-def="Thread-safe: safe for many threads to use at once, because a lock guards every shared read and write.">thread-safe</span>. Zero <span class="term" data-def="Data race: two threads touch the same memory at once and at least one writes — undefined behaviour.">data races</span> (verified with <span class="term" data-def="ThreadSanitizer: a compiler tool (-fsanitize=thread) that watches every memory access at runtime and reports data races.">ThreadSanitizer</span>, a compiler tool that watches memory while the program runs).</p>
+    </div>
+    <div class="idea blue">
+      <div class="idea-label">🧠 FAIRNESS: smart_think()</div>
+      <p>After sleeping, a philosopher computes its survival margin — how much spare time it has before it would die: <code>time_to_die − (now − last_meal) − time_to_eat</code>. If the margin is comfortable, it waits <code>margin / 2</code> before grabbing forks — yielding to hungrier neighbours. A starving philosopher waits 0 and grabs immediately.</p>
+    </div>
+    <div class="idea purple">
+      <div class="idea-label">⏱ PRECISE, INTERRUPTIBLE SLEEP</div>
+      <p><code>ft_usleep()</code> never sleeps the full duration at once — it naps in 200µs slices and re-checks <code>has_stopped()</code> each slice, so threads exit almost instantly when the dinner ends.</p>
+    </div>
+    <div class="idea red full">
+      <div class="idea-label">💀 DEATH DETECTION — WITHIN 10ms</div>
+      <p>The monitor <span class="term" data-def="Polling: checking a condition over and over in a loop instead of being notified — like refreshing a tracking page.">polls</span> (checks over and over) every 500µs across all philosophers: under <code>meal_lock</code> it computes <code>now − last_meal</code>; if that exceeds <code>time_to_die</code>, it calls <code>set_stop()</code> and prints <code>died</code> — <strong>bypassing</strong> <code>print_status()</code>, because that helper refuses to print once the simulation has stopped. The death message must be the one exception.</p>
+    </div>
+    <div class="idea orange full">
+      <div class="idea-label">🍝 EDGE CASE: THE LONE PHILOSOPHER</div>
+      <p>With <code>nb_philos == 1</code> there is only ONE fork (left and right point at the same mutex — locking both means locking a key you already hold, so you'd wait on yourself forever: a self-<span class="term" data-def="Deadlock: waiting forever on a lock that can never be released — here, waiting on yourself.">deadlock</span>). <code>lone_philo()</code> takes the single fork, announces it, waits <code>time_to_die + 10</code>ms, and lets the monitor declare the death. He can never eat. That's the correct behaviour.</p>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <strong>One sentence to remember the whole design</strong>
+    N greedy <span class="term" data-def="Thread: a second worker inside your program, sharing its memory.">threads</span> + per-fork locks + asymmetric grab order to kill <span class="term" data-def="Deadlock: threads each hold something the other needs, so everyone waits forever.">deadlock</span> + an adaptive thinking pause to kill <span class="term" data-def="Starvation: one thread keeps losing the resource fight and never gets a turn.">starvation</span> + a <span class="term" data-def="Polling: checking a condition over and over in a loop.">polling</span> main thread as judge.
+  </div>
+</section>
+
+<hr>
+
+<!-- ===== 2. FLOWCHART ===== -->
+<section id="flow">
+  <div class="section-tag tag-blue">Part 2 — Flowchart</div>
+  <h2>Full program flow</h2>
+
+  <p>Read it top to bottom. The moment the chart splits into two side-by-side lanes is the moment the program becomes <span class="term" data-def="Concurrency: several tasks making progress during the same time span.">concurrent</span>: the philosopher <span class="term" data-def="Thread: a second worker inside your program, sharing its memory.">threads</span> and the <span class="term" data-def="Monitor: a watcher loop that scans everyone's state — ours runs in the main thread.">monitor</span> really do run at the same time, sharing the same memory.</p>
+
+  <div class="flow">
+    <div class="fbox start">
+      <div class="fname">./philo 5 800 200 200 [7]</div>
+      <div class="fdesc">nb · time_to_die · time_to_eat · time_to_sleep · [must_eat]</div>
+    </div>
+    <div class="farrow">▼<small>main.c</small></div>
+    <div class="fbox">
+      <div class="fname">check_args() + is_number()</div>
+      <div class="fdesc">digits only · fits in int · 1–200 philosophers — reject bad input before anything is allocated</div>
+    </div>
+    <div class="farrow">▼<small>init.c</small></div>
+    <div class="fbox">
+      <div class="fname">init_data() → init_forks() → init_philos()</div>
+      <div class="fdesc">parse numbers into <code>t_data</code> · N fork <span class="term" data-def="Mutex: a lock only one thread can hold at a time — like a bathroom key.">mutexes</span> · print/meal/stop locks · N <code>t_philo</code> wired to their two forks</div>
+    </div>
+    <div class="farrow">▼<small>main.c — start_simulation()</small></div>
+    <div class="fbox">
+      <div class="fname">start_time = get_time_ms() · pthread_create ×N</div>
+      <div class="fdesc"><span class="term" data-def="Spawn: create and start a new thread — pthread_create does exactly this.">spawn</span> N threads · every philosopher's <code>last_meal</code> starts at <code>start_time</code></div>
+    </div>
+    <div class="farrow">▼<small>now two things run at once</small></div>
+
+    <div class="fsplit">
+      <div class="flane philo">
+        <div class="flane-title">×N philosopher threads — routine()</div>
+        <div class="fbox"><div class="fname">stagger</div><div class="fdesc">even IDs wait <code>time_to_eat / 2</code> first — <span class="term" data-def="Stagger: offset start times on purpose so everyone doesn't lunge for the forks at once — like boarding a plane by rows.">staggering</span> stops the opening stampede</div></div>
+        <div class="farrow">▼</div>
+        <div class="fbox"><div class="fname">take_forks()</div><div class="fdesc">parity order · print ×2 “has taken a fork”</div></div>
+        <div class="farrow">▼</div>
+        <div class="fbox"><div class="fname">eat_meal()</div><div class="fdesc">lock meal_lock → stamp <code>last_meal</code>, <code>meals_eaten++</code> → eat → drop both forks</div></div>
+        <div class="farrow">▼</div>
+        <div class="fbox"><div class="fname">sleep</div><div class="fdesc"><code>ft_usleep(time_to_sleep)</code></div></div>
+        <div class="farrow">▼</div>
+        <div class="fbox"><div class="fname">smart_think()</div><div class="fdesc">wait <code>margin / 2</code> if well-fed, 0 if starving</div></div>
+        <div class="floop">⟲ loop while !has_stopped()</div>
+      </div>
+
+      <div class="flane monitor">
+        <div class="flane-title">main thread — monitor()</div>
+        <div class="fbox"><div class="fname">check_death(philo i)</div><div class="fdesc">meal_lock → <code>now − last_meal &gt; time_to_die</code>?</div></div>
+        <div class="farrow">▼</div>
+        <div class="fbox"><div class="fname">all_ate()</div><div class="fdesc">everyone ≥ <code>must_eat</code> meals? (only if 5th arg given)</div></div>
+        <div class="farrow">▼</div>
+        <div class="fbox"><div class="fname">usleep(500)</div><div class="fdesc">tiny nap, then re-scan — death caught within 10ms</div></div>
+        <div class="floop">⟲ loop until death or all fed</div>
+      </div>
+    </div>
+
+    <div class="farrow">▼<small>either lane triggers the end</small></div>
+    <div class="fbox">
+      <div class="fname">set_stop() [+ print “died” if starved]</div>
+      <div class="fdesc">stop flag flips under stop_lock → every <code>ft_usleep</code> / loop check notices → threads return</div>
+    </div>
+    <div class="farrow">▼<small>main.c / init.c</small></div>
+    <div class="fbox end">
+      <div class="fname">join_philos() → free_data()</div>
+      <div class="fdesc"><span class="term" data-def="Join: wait for a thread to finish before moving on, and clean up after it — like a parent waiting at the door until the kid is home.">join</span> all N threads (wait for each to finish) · destroy every mutex · free forks + philos arrays · exit</div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ===== 3. BUILD ORDER ===== -->
+<section id="order">
+  <div class="section-tag tag-orange">Part 3 — Step-by-Step Build Order</div>
+  <h2>Build it in the order we built it</h2>
+  <p>This is the actual sequence from our session. The rule behind it: <strong>data first, callers before callees you can stub, testing last but brutal.</strong> Tick each box as you finish — progress is saved in your browser.</p>
+
+  <div class="progress-wrap"><div id="progress-bar"></div></div>
+
+  <div class="step-card" data-step="1">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title"><code>philo.h</code> — structs &amp; every prototype</div>
+      <div class="step-why"><strong>Why first:</strong> every other file includes this. Once <code>t_philo</code> and <code>t_data</code> exist, you can write any function in any order — the types are the contract. Deciding “what data lives where” IS the design phase.</div>
+      <div class="step-check"><input type="checkbox" id="s1"><label for="s1">done — header compiles with a dummy main</label></div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="2">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title"><code>main.c</code> — validate args, <span class="term" data-def="Spawn: create and start a new thread (pthread_create).">spawn</span> &amp; <span class="term" data-def="Join: wait for a thread to finish before moving on (pthread_join).">join</span> threads</div>
+      <div class="step-why"><strong>Why second:</strong> everything downstream trusts its input, so validation must exist before logic. Writing <code>start_simulation()</code> now (calling functions that don't exist yet) forces you to design the whole program's skeleton — the header's prototypes make that legal.</div>
+      <div class="step-check"><input type="checkbox" id="s2"><label for="s2">done — bad args rejected with clear messages</label></div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="3">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title"><code>init.c</code> — <span class="term" data-def="Mutex: a lock only one thread can hold at a time — like a bathroom key.">mutexes</span>, philosophers, cleanup</div>
+      <div class="step-why"><strong>Why third:</strong> threads can't run before their world exists. Build <code>free_data()</code> in the same sitting as <code>init_data()</code> — every resource you create, you immediately know how to destroy. Handle the malloc/init failure paths NOW, not later.</div>
+      <div class="step-check"><input type="checkbox" id="s3"><label for="s3">done — init + free, no leaks on failure paths</label></div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="4">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title"><code>routine.c</code> — the philosopher life cycle</div>
+      <div class="step-why"><strong>Why fourth:</strong> this is the heart. Get ONE philosopher's loop right (take forks → eat → sleep → think), then parity ordering makes N of them coexist. Includes <code>lone_philo()</code> — write the edge case while the fork logic is fresh in your head.</div>
+      <div class="step-check"><input type="checkbox" id="s4"><label for="s4">done — routine, take_forks, eat_meal, lone_philo</label></div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="5">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-title"><code>monitor.c</code> — stop flag &amp; death watch</div>
+      <div class="step-why"><strong>Why fifth:</strong> the routine loops on <code>has_stopped()</code>, so the stop machinery is what turns “N infinite loops” into a program that ends. Death check + meal-count check + the <span class="term" data-def="Thread-safe: safe for many threads to use at once, because a lock guards every shared read and write.">thread-safe</span> flag all live here.</div>
+      <div class="step-check"><input type="checkbox" id="s5"><label for="s5">done — has_stopped, set_stop, check_death, all_ate, monitor</label></div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="6">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <div class="step-title"><code>utils.c</code> — time, sleep, print, atol</div>
+      <div class="step-why"><strong>Why now:</strong> you've been calling <code>get_time_ms()</code> / <code>ft_usleep()</code> / <code>print_status()</code> since step 4 — now give them real bodies. Written last among the .c files because their exact behaviour (slice size, stop checks) is dictated by how the routine and monitor use them.</div>
+      <div class="step-check"><input type="checkbox" id="s6"><label for="s6">done — everything links, program runs</label></div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="7">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <div class="step-title"><code>Makefile</code> — <code>-Wall -Wextra -Werror -pthread</code></div>
+      <div class="step-why"><strong>Why here:</strong> trivial but graded. <code>all clean fclean re</code>, no relink, and don't forget <code>-pthread</code> — without it the pthread functions may link but misbehave.</div>
+      <div class="step-check"><input type="checkbox" id="s7"><label for="s7">done — make re is clean, norminette OK</label></div>
+    </div>
+  </div>
+
+  <div class="step-card" data-step="8">
+    <div class="step-num">8</div>
+    <div class="step-body">
+      <div class="step-title">Test &amp; tune — where the real bugs live</div>
+      <div class="step-why"><strong>Why brutal testing matters:</strong> our first version passed single runs of every config — then five 8-second <span class="term" data-def="Stress test: run the same config many times to force out rare timing bugs a single run hides.">stress runs</span> of <code>./philo 5 800 200 200</code> produced <em>intermittent</em> deaths. Odd counts + timing drift = slow <span class="term" data-def="Starvation: one thread keeps losing the resource fight and never gets a turn.">starvation</span>. The fix was <code>smart_think()</code>. Run each config 5+ times; <span class="term" data-def="Race condition: a timing bug — the outcome depends on which thread happens to run first, so it won't reproduce on demand.">race bugs</span> don't show up on demand. Check with <span class="term" data-def="ThreadSanitizer: a compiler tool (-fsanitize=thread) that watches memory at runtime and reports data races.">ThreadSanitizer</span> (<code>-fsanitize=thread</code>) and norminette.</div>
+      <div class="step-check"><input type="checkbox" id="s8"><label for="s8">done — 1 philo dies ≈ time_to_die · 5/800/200/200 never dies · meal count stops exactly · tsan clean</label></div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ===== 4. CODING FRAMEWORK ===== -->
+<section id="framework">
+  <div class="section-tag tag-teal">Part 4 — Coding Framework</div>
+  <h2>Skeletons — fill these in yourself</h2>
+  <p>Prototypes and TODO stubs matching our exact file and function names. No solutions — the TODOs tell you <em>what</em> each piece must achieve; the <em>how</em> is your workout. Norm limits to respect: ≤25 lines, ≤5 variables per function, ≤5 functions per file.</p>
+
+  <details open>
+    <summary>Step 1 <span class="file">philo.h</span> — the two structs + prototypes</summary>
+    <div class="d-body">
+<pre><code><span class="kw">#ifndef</span> PHILO_H
+<span class="kw"># define</span> PHILO_H
+
+<span class="cm">/* includes: pthread.h stdio.h stdlib.h string.h sys/time.h unistd.h */</span>
+
+<span class="kw">typedef struct</span> <span class="type">s_data</span>	<span class="type">t_data</span>;
+
+<span class="kw">typedef struct</span> <span class="type">s_philo</span>
+{
+	<span class="type">int</span>				id;			<span class="cm">/* 1-based */</span>
+	<span class="type">int</span>				meals_eaten;
+	<span class="type">long</span>			last_meal;	<span class="cm">/* ms timestamp — guarded by meal_lock */</span>
+	<span class="type">pthread_t</span>		thread;
+	<span class="type">pthread_mutex_t</span>	*left_fork;
+	<span class="type">pthread_mutex_t</span>	*right_fork;
+	<span class="type">t_data</span>			*data;		<span class="cm">/* back-pointer to shared state */</span>
+}	<span class="type">t_philo</span>;
+
+<span class="kw">struct</span> <span class="type">s_data</span>
+{
+	<span class="type">int</span>				nb_philos;
+	<span class="type">long</span>			time_to_die;
+	<span class="type">long</span>			time_to_eat;
+	<span class="type">long</span>			time_to_sleep;
+	<span class="type">int</span>				must_eat;	<span class="cm">/* -1 when no 5th arg */</span>
+	<span class="type">int</span>				stopped;	<span class="cm">/* guarded by stop_lock */</span>
+	<span class="type">long</span>			start_time;
+	<span class="type">pthread_mutex_t</span>	*forks;		<span class="cm">/* array of nb_philos mutexes */</span>
+	<span class="type">pthread_mutex_t</span>	print_lock;
+	<span class="type">pthread_mutex_t</span>	meal_lock;
+	<span class="type">pthread_mutex_t</span>	stop_lock;
+	<span class="type">t_philo</span>			*philos;
+};
+
+<span class="cm">/* init.c    */</span> <span class="type">int</span>   <span class="fn">init_data</span>(<span class="type">t_data</span> *data, <span class="type">int</span> argc, <span class="type">char</span> **argv);
+<span class="cm">/*           */</span> <span class="type">void</span>  <span class="fn">free_data</span>(<span class="type">t_data</span> *data);
+<span class="cm">/* routine.c */</span> <span class="type">void</span>  *<span class="fn">routine</span>(<span class="type">void</span> *arg);
+<span class="cm">/* monitor.c */</span> <span class="type">void</span>  <span class="fn">monitor</span>(<span class="type">t_data</span> *data);
+<span class="cm">/*           */</span> <span class="type">int</span>   <span class="fn">has_stopped</span>(<span class="type">t_data</span> *data);
+<span class="cm">/*           */</span> <span class="type">void</span>  <span class="fn">set_stop</span>(<span class="type">t_data</span> *data);
+<span class="cm">/* utils.c   */</span> <span class="type">long</span>  <span class="fn">ft_atol</span>(<span class="kw">const</span> <span class="type">char</span> *str);
+<span class="cm">/*           */</span> <span class="type">long</span>  <span class="fn">get_time_ms</span>(<span class="type">void</span>);
+<span class="cm">/*           */</span> <span class="type">void</span>  <span class="fn">ft_usleep</span>(<span class="type">long</span> ms, <span class="type">t_data</span> *data);
+<span class="cm">/*           */</span> <span class="type">void</span>  <span class="fn">print_status</span>(<span class="type">t_philo</span> *philo, <span class="type">char</span> *msg);
+
+<span class="kw">#endif</span></code></pre>
+      <p>Design questions to answer before moving on: why does <code>t_philo</code> need a back-pointer to <code>t_data</code>? (Hint: <code>pthread_create</code> — the call that <span class="term" data-def="Spawn: create and start a new thread.">spawns</span> a thread — passes exactly ONE <code>void *</code> to it.) Why is <code>last_meal</code> a <code>long</code> and not an <code>int</code>?</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step 2 <span class="file">main.c</span> — 5 functions: is_number · check_args · join_philos · start_simulation · main</summary>
+    <div class="d-body">
+<pre><code><span class="cm">/* Returns 1 if str is a non-empty string of digits only. */</span>
+<span class="kw">static</span> <span class="type">int</span>	<span class="fn">is_number</span>(<span class="type">char</span> *str)
+{
+	<span class="cm">/* TODO: reject empty string; walk chars, reject non 0-9 */</span>
+}
+
+<span class="cm">/* Validates count, format and ranges. Prints usage / error, returns 0/1. */</span>
+<span class="kw">static</span> <span class="type">int</span>	<span class="fn">check_args</span>(<span class="type">int</span> argc, <span class="type">char</span> **argv)
+{
+	<span class="cm">/* TODO: argc must be 5 or 6 */</span>
+	<span class="cm">/* TODO: every arg: is_number() and fits in an int (use ft_atol cap) */</span>
+	<span class="cm">/* TODO: philosophers between 1 and 200 */</span>
+}
+
+<span class="cm">/* Joins the first `count` philosopher threads. */</span>
+<span class="kw">static</span> <span class="type">void</span>	<span class="fn">join_philos</span>(<span class="type">t_data</span> *data, <span class="type">int</span> count)
+{
+	<span class="cm">/* TODO: pthread_join loop — also reused for partial cleanup
+	   when pthread_create fails halfway through */</span>
+}
+
+<span class="cm">/* Stamps start_time, creates N threads, runs monitor, joins all. */</span>
+<span class="kw">static</span> <span class="type">int</span>	<span class="fn">start_simulation</span>(<span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO: data-&gt;start_time = get_time_ms() */</span>
+	<span class="cm">/* TODO: per philo: last_meal = start_time, then pthread_create(
+	         &philo.thread, NULL, &routine, &philo) */</span>
+	<span class="cm">/* TODO: on create failure: set_stop + join_philos(data, i) + return 0 */</span>
+	<span class="cm">/* TODO: monitor(data);  then join_philos(data, nb_philos) */</span>
+}
+
+<span class="type">int</span>	<span class="fn">main</span>(<span class="type">int</span> argc, <span class="type">char</span> **argv)
+{
+	<span class="cm">/* TODO: check_args → init_data → start_simulation → free_data
+	   free_data on EVERY exit path after init succeeds */</span>
+}</code></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step 3 <span class="file">init.c</span> — 4 functions: init_forks · init_philos · init_data · free_data</summary>
+    <div class="d-body">
+<pre><code><span class="cm">/* malloc + pthread_mutex_init one mutex per fork.
+   On failure at index i: destroy 0..i-1, free, NULL the pointer. */</span>
+<span class="kw">static</span> <span class="type">int</span>	<span class="fn">init_forks</span>(<span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO */</span>
+}
+
+<span class="cm">/* malloc philos; per philo: id = i + 1, meals_eaten = 0,
+   left_fork = &forks[i], right_fork = &forks[(i + 1) % nb], data ptr. */</span>
+<span class="kw">static</span> <span class="type">int</span>	<span class="fn">init_philos</span>(<span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO — the modulo wrap-around is what closes the table circle */</span>
+}
+
+<span class="cm">/* Parse argv into the fields, must_eat = -1 without 5th arg,
+   then init forks + the three shared locks + philos. */</span>
+<span class="type">int</span>	<span class="fn">init_data</span>(<span class="type">t_data</span> *data, <span class="type">int</span> argc, <span class="type">char</span> **argv)
+{
+	<span class="cm">/* TODO — call free_data and return 0 if any stage fails */</span>
+}
+
+<span class="cm">/* Destroy every fork mutex + 3 locks, free both arrays. */</span>
+<span class="type">void</span>	<span class="fn">free_data</span>(<span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO — guard the forks loop: pointer may be NULL */</span>
+}</code></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step 4 <span class="file">routine.c</span> — 5 functions: lone_philo · take_forks · eat_meal · smart_think · routine</summary>
+    <div class="d-body">
+<pre><code><span class="cm">/* nb_philos == 1: take THE fork, print it, ft_usleep(time_to_die + 10),
+   release, return NULL. He can never eat — monitor will declare death. */</span>
+<span class="kw">static</span> <span class="type">void</span>	*<span class="fn">lone_philo</span>(<span class="type">t_philo</span> *philo)
+{
+	<span class="cm">/* TODO */</span>
+}
+
+<span class="cm">/* Lock both forks. DEADLOCK KILLER: even ids grab RIGHT first,
+   odd ids grab LEFT first. Print "has taken a fork" after each lock. */</span>
+<span class="kw">static</span> <span class="type">void</span>	<span class="fn">take_forks</span>(<span class="type">t_philo</span> *philo)
+{
+	<span class="cm">/* TODO: two pthread_mutex_t *first / *second, swap by id % 2 */</span>
+}
+
+<span class="cm">/* Under meal_lock: last_meal = now, meals_eaten++.  Then print
+   "is eating", ft_usleep(time_to_eat), unlock BOTH forks. */</span>
+<span class="kw">static</span> <span class="type">void</span>	<span class="fn">eat_meal</span>(<span class="type">t_philo</span> *philo)
+{
+	<span class="cm">/* TODO — releasing forks here keeps the file at 5 functions */</span>
+}
+
+<span class="cm">/* STARVATION KILLER. Print "is thinking", then:
+   margin = time_to_die - (now - last_meal) - time_to_eat   (meal_lock!)
+   if margin &gt; 0 → ft_usleep(margin / 2).
+   Well-fed philosophers yield; starving ones lunge for the forks. */</span>
+<span class="kw">static</span> <span class="type">void</span>	<span class="fn">smart_think</span>(<span class="type">t_philo</span> *philo)
+{
+	<span class="cm">/* TODO */</span>
+}
+
+<span class="cm">/* Thread entry. Cast arg back to t_philo *.  1 philo → lone_philo.
+   Even ids: ft_usleep(time_to_eat / 2) initial stagger.
+   Loop while !has_stopped: take_forks → eat_meal → sleep → smart_think. */</span>
+<span class="type">void</span>	*<span class="fn">routine</span>(<span class="type">void</span> *arg)
+{
+	<span class="cm">/* TODO — also re-check has_stopped between eat and sleep */</span>
+}</code></pre>
+      <p>Trap to avoid: with 1 philosopher, <code>left_fork == right_fork</code>. Locking the same <span class="term" data-def="Mutex: a lock only one thread can hold at a time. Locking one you already hold means waiting on yourself forever.">mutex</span> twice = instant self-<span class="term" data-def="Deadlock: waiting forever on a lock that can never be released.">deadlock</span> (you wait for a key that's in your own pocket). That's the whole reason <code>lone_philo()</code> exists.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step 5 <span class="file">monitor.c</span> — 5 functions: has_stopped · set_stop · check_death · all_ate · monitor</summary>
+    <div class="d-body">
+<pre><code><span class="cm">/* Read the stopped flag under stop_lock, return the copy. */</span>
+<span class="type">int</span>	<span class="fn">has_stopped</span>(<span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO — lock, copy to a local, unlock, return the local */</span>
+}
+
+<span class="cm">/* Write stopped = 1 under stop_lock. */</span>
+<span class="type">void</span>	<span class="fn">set_stop</span>(<span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO */</span>
+}
+
+<span class="cm">/* Under meal_lock read (now - last_meal). If &gt; time_to_die:
+   set_stop, THEN print "&lt;ts&gt; &lt;id&gt; died" holding print_lock directly
+   (print_status would refuse — it checks has_stopped). Return 1. */</span>
+<span class="kw">static</span> <span class="type">int</span>	<span class="fn">check_death</span>(<span class="type">t_philo</span> *philo)
+{
+	<span class="cm">/* TODO */</span>
+}
+
+<span class="cm">/* must_eat &lt; 0 → return 0.  Else under meal_lock check every
+   philosopher's meals_eaten ≥ must_eat. */</span>
+<span class="kw">static</span> <span class="type">int</span>	<span class="fn">all_ate</span>(<span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO */</span>
+}
+
+<span class="cm">/* Runs in MAIN thread. Forever: scan all philos with check_death
+   (return on death), then all_ate → set_stop + return.  usleep(500). */</span>
+<span class="type">void</span>	<span class="fn">monitor</span>(<span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO */</span>
+}</code></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step 6 <span class="file">utils.c</span> — 4 functions: ft_atol · get_time_ms · ft_usleep · print_status</summary>
+    <div class="d-body">
+<pre><code><span class="cm">/* Digit-only atol. Cap: if n ever exceeds INT_MAX return a
+   sentinel &gt; INT_MAX so check_args can reject the argument. */</span>
+<span class="type">long</span>	<span class="fn">ft_atol</span>(<span class="kw">const</span> <span class="type">char</span> *str)
+{
+	<span class="cm">/* TODO */</span>
+}
+
+<span class="cm">/* gettimeofday → (sec * 1000) + (usec / 1000). */</span>
+<span class="type">long</span>	<span class="fn">get_time_ms</span>(<span class="type">void</span>)
+{
+	<span class="cm">/* TODO: struct timeval */</span>
+}
+
+<span class="cm">/* Sleep `ms` in 200µs slices: while now &lt; end, return early
+   if has_stopped(data), else usleep(200). NEVER one big usleep. */</span>
+<span class="type">void</span>	<span class="fn">ft_usleep</span>(<span class="type">long</span> ms, <span class="type">t_data</span> *data)
+{
+	<span class="cm">/* TODO: end = get_time_ms() + ms */</span>
+}
+
+<span class="cm">/* Under print_lock: if !has_stopped, printf
+   "&lt;now - start_time&gt; &lt;id&gt; &lt;msg&gt;\n". One line, never interleaved. */</span>
+<span class="type">void</span>	<span class="fn">print_status</span>(<span class="type">t_philo</span> *philo, <span class="type">char</span> *msg)
+{
+	<span class="cm">/* TODO */</span>
+}</code></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step 7 <span class="file">Makefile</span> — skeleton</summary>
+    <div class="d-body">
+<pre><code>NAME    = philo
+CC      = cc
+CFLAGS  = -Wall -Wextra -Werror -pthread
+SRCS    = main.c init.c routine.c monitor.c utils.c
+OBJS    = $(SRCS:.c=.o)
+
+<span class="cm"># TODO: all → $(NAME)</span>
+<span class="cm"># TODO: $(NAME): $(OBJS) → link with $(CFLAGS)</span>
+<span class="cm"># TODO: %.o: %.c philo.h → compile rule (header dep = rebuild on change)</span>
+<span class="cm"># TODO: clean / fclean / re + .PHONY</span></code></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step 8 — the test commands we actually used</summary>
+    <div class="d-body">
+<pre><code><span class="cm"># one philosopher: must die at ≈ 400ms (we got 401–402)</span>
+./philo 1 400 200 200
+
+<span class="cm"># must-eat: 5 philos × 3 meals → stops, exactly 15 "is eating"</span>
+./philo 5 800 200 200 3 | grep -c "is eating"
+
+<span class="cm"># STRESS — run each 5+ times; our starvation bug only showed
+# intermittently (deaths at 1002ms, 5204ms, 5635ms across runs)</span>
+for i in 1 2 3 4 5; do timeout 8 ./philo 5 800 200 200 | grep died; done
+for i in 1 2 3 4 5; do timeout 8 ./philo 4 410 200 200 | grep died; done
+
+<span class="cm"># data-race hunt: rebuild with ThreadSanitizer</span>
+cc -Wall -Wextra -Werror -pthread -fsanitize=thread -g *.c -o philo_tsan
+timeout 5 ./philo_tsan 5 800 200 200
+
+<span class="cm"># the graded gate</span>
+norminette *.c *.h</code></pre>
+      <p>If the <span class="term" data-def="Stress test: run the same config many times to force out rare timing bugs.">stress runs</span> show rare deaths on valid configs: that's <span class="term" data-def="Starvation: one thread keeps losing the resource fight and never gets a turn.">starvation</span>, not bad luck. Our fix was the adaptive pause in <code>smart_think()</code> — re-read its stub in Step 4.</p>
+    </div>
+  </details>
+</section>
+
+<hr>
+
+<!-- ===== 5. REFERENCES ===== -->
+<section id="refs">
+  <div class="section-tag tag-red">Part 5 — Reference Notes &amp; Citations</div>
+  <h2>Man pages, articles, concepts</h2>
+
+  <h3>Man pages you'll live in</h3>
+  <ul class="ref-list">
+    <li><span class="ref-kind">man 3 pthread_create</span>
+      <a href="https://man7.org/linux/man-pages/man3/pthread_create.3.html">pthread_create(3)</a>
+      <span class="ref-note">— <span class="term" data-def="Spawn: create and start a new thread.">spawn</span> a thread running <code>void *fn(void *)</code>. Ours: <code>pthread_create(&philo.thread, NULL, &routine, &philo)</code>.</span></li>
+    <li><span class="ref-kind">man 3 pthread_join</span>
+      <a href="https://man7.org/linux/man-pages/man3/pthread_join.3.html">pthread_join(3)</a>
+      <span class="ref-note">— wait for a thread to finish (<span class="term" data-def="Join: wait for a thread to finish before moving on — like waiting at the door until the kid is home.">join</span> it). Skipping it = threads killed mid-work + leaked resources.</span></li>
+    <li><span class="ref-kind">man 3 pthread_mutex_lock</span>
+      <a href="https://man7.org/linux/man-pages/man3/pthread_mutex_lock.3p.html">pthread_mutex_lock(3p)</a>
+      <span class="ref-note">— <span class="term" data-def="Blocked: paused on a locked mutex, doing nothing until it opens.">blocks</span> (pauses your thread) until the lock is yours. Locking a mutex you already hold (lone-philosopher trap) = undefined/deadlock.</span></li>
+    <li><span class="ref-kind">man 3 pthread_mutex_init</span>
+      <a href="https://man7.org/linux/man-pages/man3/pthread_mutex_init.3p.html">pthread_mutex_init(3p) / destroy</a>
+      <span class="ref-note">— init before use, destroy exactly once, never destroy a locked mutex.</span></li>
+    <li><span class="ref-kind">man 2 gettimeofday</span>
+      <a href="https://man7.org/linux/man-pages/man2/gettimeofday.2.html">gettimeofday(2)</a>
+      <span class="ref-note">— µs-resolution wall clock; our <code>get_time_ms()</code> converts to ms: <code>sec * 1000 + usec / 1000</code>.</span></li>
+    <li><span class="ref-kind">man 3 usleep</span>
+      <a href="https://man7.org/linux/man-pages/man3/usleep.3.html">usleep(3)</a>
+      <span class="ref-note">— sleeps <em>at least</em> that long (OS may oversleep). Why <code>ft_usleep</code> slices 200µs naps instead of one big sleep.</span></li>
+  </ul>
+
+  <h3>The problem itself</h3>
+  <ul class="ref-list">
+    <li><span class="ref-kind">original paper</span>
+      E.W. Dijkstra, <a href="https://www.cs.utexas.edu/users/EWD/ewd03xx/EWD310.PDF">“Hierarchical Ordering of Sequential Processes” (EWD-310)</a>
+      <span class="ref-note">— where the dining philosophers were born (as “dining quintuple”), 1965/71.</span></li>
+    <li><span class="ref-kind">overview</span>
+      <a href="https://en.wikipedia.org/wiki/Dining_philosophers_problem">Wikipedia — Dining philosophers problem</a>
+      <span class="ref-note">— survey of solutions; ours is the “resource ordering” family (asymmetric acquisition: neighbours grab forks in different orders).</span></li>
+    <li><span class="ref-kind">deadlock theory</span>
+      <a href="https://en.wikipedia.org/wiki/Deadlock#Necessary_conditions">Coffman conditions</a>
+      <span class="ref-note">— the 4 conditions that must ALL hold for <span class="term" data-def="Deadlock: threads each hold something the other needs, so everyone waits forever.">deadlock</span>. Break any one, deadlock is impossible. Parity fork order breaks <em><span class="term" data-def="Circular wait: A waits for B, B waits for C, C waits for A — nobody ever moves.">circular wait</span></em>.</span></li>
+    <li><span class="ref-kind">tooling</span>
+      <a href="https://clang.llvm.org/docs/ThreadSanitizer.html">ThreadSanitizer docs</a>
+      <span class="ref-note">— <code>-fsanitize=thread</code>; how we proved zero <span class="term" data-def="Data race: two threads touch the same memory at once and at least one writes — undefined behaviour.">data races</span>. Slows the program ~5-15× — use short runs.</span></li>
+  </ul>
+
+  <h3>Concepts referenced above — 10-second recap</h3>
+  <div class="idea-grid">
+    <div class="idea purple"><div class="idea-label">thread</div><p>An execution lane sharing the process's memory — a coworker at the same desk. Cheap, parallel, dangerous together.</p></div>
+    <div class="idea teal"><div class="idea-label">mutex</div><p>A lock — the bathroom key. One owner at a time; everyone else blocks on <code>lock()</code> until <code>unlock()</code>.</p></div>
+    <div class="idea red"><div class="idea-label">data race</div><p>Unsynchronized access to shared memory, ≥1 writer — two hands scribbling one whiteboard. <span class="term" data-def="Undefined behaviour: C makes no promises — the program may work, crash, or corrupt silently.">Undefined behaviour</span> — even if it “seems to work”.</p></div>
+    <div class="idea orange"><div class="idea-label">circular wait</div><p>A → waits for B → waits for C → waits for A. The Coffman condition our parity trick removes.</p></div>
+    <div class="idea blue"><div class="idea-label">starvation</div><p>A thread that never wins the resource race — forever cut in line at the buffet. Fixed by fairness (<code>smart_think</code>), not by locks alone.</p></div>
+    <div class="idea purple"><div class="idea-label">monitor pattern</div><p>One watcher — a lifeguard — <span class="term" data-def="Polling: checking a condition over and over in a loop.">polling</span> shared state to enforce global rules (death, meal quota) the workers can't see alone.</p></div>
+  </div>
+
+  <div class="callout tip">
+    <strong>Last thing before your defense</strong>
+    Be ready to answer: why can't a philosopher check their own death? (Because a philosopher <span class="term" data-def="Blocked: paused on a locked mutex, doing nothing until it opens — it cannot run ANY code while waiting.">blocked</span> on <code>pthread_mutex_lock</code> can't run any code — only an outside observer can catch a starving, <em>blocked</em> thread in time.)
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<script>
+  // checkbox progress — persisted in localStorage
+  var KEY = "philo_study_steps";
+  var boxes = document.querySelectorAll(".step-check input");
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+
+  function refresh() {
+    var done = 0;
+    boxes.forEach(function (b) {
+      if (b.checked) done++;
+      b.closest(".step-card").classList.toggle("done", b.checked);
+    });
+    document.getElementById("progress-bar").style.width = (done / boxes.length * 100) + "%";
+    document.getElementById("nav-progress").textContent = done + " / " + boxes.length + " steps";
+  }
+
+  boxes.forEach(function (b) {
+    if (saved[b.id]) b.checked = true;
+    b.addEventListener("change", function () {
+      saved[b.id] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+      refresh();
+    });
+  });
+  refresh();
+</script>
+
+</body>
+</html>

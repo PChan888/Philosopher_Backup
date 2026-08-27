@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/kai/42Bkk/Rank 3/**)",
+      "Read(//usr/include/readline/**)",
+      "Read(//home/kai/42Bkk/**)",
+      "Read(//home/kai/42Bkk/Rank 3/MiniShell/**)",
+      "Read(//home/kai/42Bkk/Rank 0/Libft/**)",
+      "Bash(find \"/home/kai/42Bkk/Rank 3/MiniShell\" -maxdepth 2 -type f | sort; echo \"=== tree ===\"; ls -la \"/home/kai/42Bkk/Rank 3/MiniShell/\")",
+      "Bash(cd \"/home/kai/42Bkk/Rank 3/MiniShell/libft\" && make 2>&1 | tail -5; echo \"=== archive ===\"; ls -la libft.a 2>&1; echo \"=== targets in Makefile ===\"; grep -E \"^\\(all|bonus|NAME|SRCS|BONUS\\)\" Makefile | head -20)",
+      "Read(//home/kai/42Bkk/Rank 3/MiniShell/libft/**)",
+      "Bash(make clean *)",
+      "Bash(rm -f a.out)"
+    ],
+    "additionalDirectories": [
+      "/home/kai/42Bkk/Rank 3/MiniShell"
+    ]
+  }
+}
